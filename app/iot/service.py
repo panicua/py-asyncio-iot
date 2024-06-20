@@ -11,7 +11,7 @@ def generate_id(length: int = 8) -> str:
 
 
 class Device(Protocol):
-    async def connect(self,) -> None:
+    async def connect(self) -> None:
         ...
 
     async def disconnect(self) -> None:
@@ -40,20 +40,30 @@ class IOTService:
 
     async def run_program(self, program: list[Message]) -> None:
         print("=====RUNNING PROGRAM======")
-
-        switch_messages = [
+        switch_and_flush_messages = [
             msg
             for msg in program
-            if msg.msg_type in {MessageType.SWITCH_ON, MessageType.SWITCH_OFF}
+            if msg.msg_type
+            in {
+                MessageType.SWITCH_ON,
+                MessageType.SWITCH_OFF,
+                MessageType.FLUSH,
+            }
         ]
         other_messages = [
             msg
             for msg in program
             if msg.msg_type
-            not in {MessageType.SWITCH_ON, MessageType.SWITCH_OFF}
+            not in {
+                MessageType.SWITCH_ON,
+                MessageType.SWITCH_OFF,
+                MessageType.FLUSH,
+            }
         ]
 
-        await asyncio.gather(*[self.send_msg(msg) for msg in switch_messages])
+        await asyncio.gather(
+            *[self.send_msg(msg) for msg in switch_and_flush_messages]
+        )
 
         for msg in other_messages:
             await self.send_msg(msg)
