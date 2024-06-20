@@ -41,10 +41,15 @@ async def main() -> None:
         Message(toilet_id, MessageType.CLEAN),
     ]
 
-    # run the programs sequentially
     await sequence_handling(
         service.run_program(wake_up_program),
         service.run_program(sleep_program),
+    )
+
+    await parallel_handling(
+        service.unregister_device(hue_light_id),
+        service.unregister_device(speaker_id),
+        service.unregister_device(toilet_id),
     )
 
 
