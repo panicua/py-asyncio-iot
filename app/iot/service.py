@@ -1,20 +1,18 @@
+import asyncio
 import random
 import string
 from typing import Protocol
 
 from .message import Message, MessageType
-import asyncio
 
 
 def generate_id(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_uppercase, k=length))
 
 
-# Protocol is very similar to ABC, but uses duck typing
-# so devices should not inherit for it (if it walks like a duck, and quacks like a duck, it's a duck)
 class Device(Protocol):
-    async def connect(self) -> None:
-        ...  # Ellipsis - similar to "pass", but sometimes has different meaning
+    async def connect(self,) -> None:
+        ...
 
     async def disconnect(self) -> None:
         ...
@@ -42,8 +40,24 @@ class IOTService:
 
     async def run_program(self, program: list[Message]) -> None:
         print("=====RUNNING PROGRAM======")
-        for msg in program:
+
+        switch_messages = [
+            msg
+            for msg in program
+            if msg.msg_type in {MessageType.SWITCH_ON, MessageType.SWITCH_OFF}
+        ]
+        other_messages = [
+            msg
+            for msg in program
+            if msg.msg_type
+            not in {MessageType.SWITCH_ON, MessageType.SWITCH_OFF}
+        ]
+
+        await asyncio.gather(*[self.send_msg(msg) for msg in switch_messages])
+
+        for msg in other_messages:
             await self.send_msg(msg)
+
         print("=====END OF PROGRAM======")
 
     async def send_msg(self, msg: Message) -> None:

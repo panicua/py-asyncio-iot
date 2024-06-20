@@ -17,21 +17,21 @@ async def main() -> None:
     toilet = SmartToiletDevice()
 
     # register devices in parallel
-    start_ = time.perf_counter()
     hue_light_id, speaker_id, toilet_id = await parallel_handling(
         service.register_device(hue_light),
         service.register_device(speaker),
-        service.register_device(toilet)
+        service.register_device(toilet),
     )
-    end_ = time.perf_counter()
-    print("Elapsed for device registration:", end_ - start_)
 
     # create a few programs
     wake_up_program = [
         Message(hue_light_id, MessageType.SWITCH_ON),
         Message(speaker_id, MessageType.SWITCH_ON),
-        Message(speaker_id, MessageType.PLAY_SONG,
-                "Rick Astley - Never Gonna Give You Up"),
+        Message(
+            speaker_id,
+            MessageType.PLAY_SONG,
+            "Rick Astley - Never Gonna Give You Up",
+        ),
     ]
 
     sleep_program = [
@@ -41,13 +41,20 @@ async def main() -> None:
         Message(toilet_id, MessageType.CLEAN),
     ]
 
-    # run the programs
-    await service.run_program(wake_up_program)
-    await service.run_program(sleep_program)
+    # run the programs sequentially
+    await sequence_handling(
+        service.run_program(wake_up_program),
+        service.run_program(sleep_program),
+    )
 
 
-async def parallel_handling(*services: Awaitable[Any]) -> list:
+async def parallel_handling(*services: Awaitable[Any]) -> tuple:
     return await asyncio.gather(*services)
+
+
+async def sequence_handling(*services: Awaitable[Any]) -> None:
+    for service in services:
+        await service
 
 
 if __name__ == "__main__":
