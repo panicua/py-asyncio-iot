@@ -7,6 +7,15 @@ from iot.message import Message, MessageType
 from iot.service import IOTService
 
 
+async def parallel_handling(*services: Awaitable[Any]) -> tuple:
+    return await asyncio.gather(*services)
+
+
+async def sequence_handling(*services: Awaitable[Any]) -> None:
+    for service in services:
+        await service
+
+
 async def main() -> None:
     # create an IOT service
     service = IOTService()
@@ -51,15 +60,6 @@ async def main() -> None:
         service.unregister_device(speaker_id),
         service.unregister_device(toilet_id),
     )
-
-
-async def parallel_handling(*services: Awaitable[Any]) -> tuple:
-    return await asyncio.gather(*services)
-
-
-async def sequence_handling(*services: Awaitable[Any]) -> None:
-    for service in services:
-        await service
 
 
 if __name__ == "__main__":
