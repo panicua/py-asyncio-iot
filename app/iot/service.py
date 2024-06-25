@@ -40,34 +40,8 @@ class IOTService:
 
     async def run_program(self, program: list[Message]) -> None:
         print("=====RUNNING PROGRAM======")
-        switch_and_flush_messages = [
-            msg
-            for msg in program
-            if msg.msg_type
-            in {
-                MessageType.SWITCH_ON,
-                MessageType.SWITCH_OFF,
-                MessageType.FLUSH,
-            }
-        ]
-        other_messages = [
-            msg
-            for msg in program
-            if msg.msg_type
-            not in {
-                MessageType.SWITCH_ON,
-                MessageType.SWITCH_OFF,
-                MessageType.FLUSH,
-            }
-        ]
-
-        await asyncio.gather(
-            *[self.send_msg(msg) for msg in switch_and_flush_messages]
-        )
-
-        for msg in other_messages:
+        for msg in program:
             await self.send_msg(msg)
-
         print("=====END OF PROGRAM======")
 
     async def send_msg(self, msg: Message) -> None:

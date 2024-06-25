@@ -32,34 +32,35 @@ async def main() -> None:
         service.register_device(toilet),
     )
 
-    # create a few programs
-    wake_up_program = [
-        Message(hue_light_id, MessageType.SWITCH_ON),
-        Message(speaker_id, MessageType.SWITCH_ON),
-        Message(
-            speaker_id,
-            MessageType.PLAY_SONG,
-            "Rick Astley - Never Gonna Give You Up",
-        ),
-    ]
-
-    sleep_program = [
-        Message(hue_light_id, MessageType.SWITCH_OFF),
-        Message(speaker_id, MessageType.SWITCH_OFF),
-        Message(toilet_id, MessageType.FLUSH),
-        Message(toilet_id, MessageType.CLEAN),
-    ]
-
-    await sequence_handling(
-        service.run_program(wake_up_program),
-        service.run_program(sleep_program),
+    # Wake-up program
+    await parallel_handling(
+        service.send_msg(Message(hue_light_id, MessageType.SWITCH_ON)),
+        sequence_handling(
+            service.send_msg(Message(speaker_id, MessageType.SWITCH_ON)),
+            service.send_msg(Message(
+                speaker_id,
+                MessageType.PLAY_SONG,
+                "Rick Astley - Never Gonna Give You Up"
+            ))
+        )
     )
 
+    # Sleep program
     await parallel_handling(
+        service.send_msg(Message(hue_light_id, MessageType.SWITCH_OFF)),
+        service.send_msg(Message(speaker_id, MessageType.SWITCH_OFF)),
+        sequence_handling(
+            service.send_msg(Message(toilet_id, MessageType.FLUSH)),
+            service.send_msg(Message(toilet_id, MessageType.CLEAN))
+        )
+    )
+
+    unregister_tasks = [
         service.unregister_device(hue_light_id),
         service.unregister_device(speaker_id),
         service.unregister_device(toilet_id),
-    )
+    ]
+    await asyncio.gather(*unregister_tasks)
 
 
 if __name__ == "__main__":
